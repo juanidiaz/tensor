@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Tensor Flow Linear regresion</title>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis"></script>
+</head>
+
+<body>
+  <script type="text/javascript">
+
+    const plot = async (pointsArray, featureName) => {
+      tfvis.render.scatterplot(
+        { name: `${featureName} vs House Price` },
+        { values: [pointsArray], series: ["originalx"] },
+        {
+          xLabel: featureName,
+          yLabel: "Price"
+        }
+      )
+    }
+
+    const normalise = tensor => {
+      const min = tensor.min();
+      const max = tensor.max();
+      const normalisedTensor = tensor.sub(min).div(max.sub(min));
+      return {
+        tensor: normalisedTensor,
+        min,
+        max
+      };
+    }
+
+    const denormalise = (tensor, min, max) => {
+      const denormalisedTensor = tensor.mul(max.sub(min)).add(min);
+      return denormalisedTensor;
+    }
+
+    const run = async () => {
+
+      // === IMPORT FROM CSV FILE
+      const houseSalesDataset = tf.data.csv("http://127.0.0.1:8080/kc_house_data.csv");
+      // const sampleDataset = houseSalesDataset.take(10);
+      // const dataArray = await sampleDataset.toArray();
+      // console.log(dataArray);
+
+      // === EXTRACT x AND y VALUES TO PLOT
+      const points = houseSalesDataset.map(record => ({
+        x: record.sqft_living,
+        y: record.price
+      }));
+
+      const featureName = "Square feet";
+      plot(await points.toArray(), featureName);
+
+      // Features (inputs)
+      const featureValues = await points.map(p => p.x).toArray();
+      const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1]);
+
+      // Labels (outputs)
+      const labelsValues = await points.map(p => p.y).toArray();
+      const labelTensor = tf.tensor2d(labelsValues, [labelsValues.length, 1]);
+
+      // featureTensor.print();
+      // labelTensor.print();
+
+      // === NORMALIZE FEATURES AND LABELS
+      const normalisedFeature = normalise(featureTensor);
+      const normalisedLabel = normalise(labelTensor);
+
+      // normalisedFeature.tensor.print();
+      // normalisedLabel.tensor.print();
+
+      // denormalise(normalisedFeature.tensor, normalisedFeature.min, normalisedFeature.max).print();
+
+    }
+
+    run()
+
+  </script>
+
+</body>
+
+</html>
